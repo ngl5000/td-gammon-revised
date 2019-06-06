@@ -1,4 +1,4 @@
-import os
+import os, sys
 import copy
 import time
 import random
@@ -12,6 +12,7 @@ class Game:
     OFF = 'off'
     ON = 'on'
     TOKENS = ['x', 'o']
+    SLEEP = 1
 
     def __init__(self, layout=LAYOUT, grid=None, off_pieces=None, bar_pieces=None, num_pieces=None, players=None):
         """
@@ -59,8 +60,11 @@ class Game:
             features += [0., 1.]
         return np.array(features).reshape(1, -1)
 
-    def roll_dice(self):
-        return (random.randint(1, self.die), random.randint(1, self.die))
+    def roll_dice(self,player):
+        if player.player == "o":
+            return (random.randint(1, self.die), random.randint(1, self.die))
+        else:
+            return (-random.randint(1, self.die), -random.randint(1, self.die))
 
     def play(self, players, draw=False):
         player_num = random.randint(0, 1)
@@ -70,7 +74,7 @@ class Game:
         return self.winner()
 
     def next_step(self, player, player_num, draw=False):
-        roll = self.roll_dice()
+        roll = self.roll_dice(player)
 
         if draw:
             self.draw()
@@ -80,10 +84,28 @@ class Game:
     def take_turn(self, player, roll, draw=False):
         if draw:
             print("Player %s rolled <%d, %d>." % (player.player, roll[0], roll[1]))
-            time.sleep(1)
+            time.sleep(self.SLEEP)
 
-        moves = self.get_actions(roll, player.player, nodups=True)
-        move = player.get_action(moves, self) if moves else None
+        r1, r2 = roll
+        if r1 == r2:
+            dubs = True
+        else:
+            dubs = False
+
+        moves = self.get_actions(roll, player.player, nodups=False)
+
+        """check for possible roles
+        for poss in moves:
+            print(poss)
+        """
+
+        if player.name == 'Human':
+            move = player.get_action(moves, self, doubles=dubs) if moves else None
+        else:
+            move = player.get_action(moves, self) if moves else None
+
+        if draw:
+            print("Player %s played %s" % (player.player, str(move)))
 
         if move:
             self.take_action(move, player.player)
@@ -168,31 +190,51 @@ class Game:
             moves.add(move)
             return
         r, rs = rs[0], rs[1:]
-        # see if we can remove a piece from the bar
+
+        # see if we can remove a piece from the bar  ***
         if self.bar_pieces[player]:
             if self.can_onboard(player, r):
-                piece = self.bar_pieces[player].pop()
-                bar_piece = None
-                if len(self.grid[r - 1]) == 1 and self.grid[r - 1][-1]!=player:
-                    bar_piece = self.grid[r - 1].pop()
 
-                self.grid[r - 1].append(piece)
+                if player == "o":
+                    piece = self.bar_pieces[player].pop()
+                    bar_piece = None
 
-                self.find_moves(rs, player, move+((Game.ON, r - 1), ), moves, start)
-                self.grid[r - 1].pop()
-                self.bar_pieces[player].append(piece)
-                if bar_piece:
-                    self.grid[r - 1].append(bar_piece)
+                    if len(self.grid[r - 1]) == 1 and self.grid[r - 1][-1]!=player:
+                        bar_piece = self.grid[r-1].pop()
+                    self.grid[r - 1].append(piece)
+
+                    self.find_moves(rs, player, move+((Game.ON, r - 1), ), moves, start)
+                    self.grid[r - 1].pop()
+                    self.bar_pieces[player].append(piece)
+                    if bar_piece:
+                        self.grid[r - 1].append(bar_piece)
+                else:
+                    piece = self.bar_pieces[player].pop()
+                    bar_piece = None
+
+                    if len(self.grid[Game.NUMCOLS + r]) == 1 and self.grid[Game.NUMCOLS + r][-1]!=player:
+                        bar_piece = self.grid[Game.NUMCOLS + r].pop()
+                    self.grid[Game.NUMCOLS + r].append(piece)
+
+                    self.find_moves(rs, player, move+((Game.ON, Game.NUMCOLS + r), ), moves, start)
+                    self.grid[Game.NUMCOLS + r].pop()
+                    self.bar_pieces[player].append(piece)
+                    if bar_piece:
+                        self.grid[Game.NUMCOLS + r].append(bar_piece)
             return
 
-        # otherwise check each grid location for valid move using r
+        # otherwise check each grid location for valid move using r ***
         offboarding = self.can_offboard(player)
+        
+        """check that offboarding is possible
+        print(offboarding)
+        """
 
         for i in range(len(self.grid)):
             if start is not None:
                 start = i
+            
             if self.is_valid_move(i, i + r, player):
-
                 piece = self.grid[i].pop()
                 bar_piece = None
                 if len(self.grid[i+r]) == 1 and self.grid[i+r][-1] != player:
@@ -204,7 +246,7 @@ class Game:
                 if bar_piece:
                     self.grid[i + r].append(bar_piece)
 
-            # If we can't move on the board can we take the piece off?
+            # If we can't move on the board can we take the piece off?********
             if offboarding and self.remove_piece(player, i, r):
                 piece = self.grid[i].pop()
                 self.off_pieces[player].append(piece)
@@ -268,41 +310,73 @@ class Game:
 
     def can_offboard(self, player):
         count = 0
-        for i in range(Game.NUMCOLS - self.die, Game.NUMCOLS):
-            if len(self.grid[i]) > 0 and self.grid[i][0] == player:
-                count += len(self.grid[i])
+
+        if player == "o":
+            for i in range(Game.NUMCOLS - self.die, Game.NUMCOLS):
+                if len(self.grid[i]) > 0 and self.grid[i][0] == player:
+                    count += len(self.grid[i])
+        else:
+            for i in range(0, self.die-1):
+                if len(self.grid[i]) > 0 and self.grid[i][0] == player:
+                    count += len(self.grid[i])
+
         if count+len(self.off_pieces[player]) == self.num_pieces[player]:
             return True
+
         return False
 
     def can_onboard(self, player, r):
-        """
+        """ added else to take care of x tokens
+
         Can we take a players piece on the bar to a position
         on the grid given by roll-1?
         """
-        if len(self.grid[r - 1]) <= 1 or self.grid[r - 1][0] == player:
-            return True
+        if player == "o":
+            if len(self.grid[r - 1]) <= 1 or self.grid[r - 1][0] == player:
+                return True
+            else:
+                return False
         else:
-            return False
+            if len(self.grid[Game.NUMCOLS + r]) <= 1 or self.grid[Game.NUMCOLS + r][0] == player:
+                return True
+            else:
+                return False
 
     def remove_piece(self, player, start, r):
-        """
+        """start variable number 0-23
         Can we remove a piece from location start with roll r ?
         In this function we assume we are cool to offboard,
         i.e. no pieces on the bar and all are in the home quadrant.
         """
-        if start < Game.NUMCOLS - self.die:
+        if player == "o":
+            if start < Game.NUMCOLS - self.die:
+                return False
+
+            if len(self.grid[start]) == 0 or self.grid[start][0] != player:
+                return False
+
+            if start + r == Game.NUMCOLS:
+                return True
+                
+            if start + r > Game.NUMCOLS:
+                for i in range(start - 1, Game.NUMCOLS - self.die - 1, -1):
+                    if len(self.grid[i]) != 0 and self.grid[i][0] == self.players[0]:
+                        return False
+                return True
             return False
-        if len(self.grid[start]) == 0 or self.grid[start][0] != player:
+        else:
+            if start > self.die:
+                return False
+            if len(self.grid[start]) == 0 or self.grid[start][0] != player:
+                return False
+            if start + r == -1:
+                return True
+            if start + r < -1:
+                for i in range(0, start):
+                    if len(self.grid[i]) != 0 and self.grid[i][0] == self.players[0]:
+                        return False
+                return True
             return False
-        if start + r == Game.NUMCOLS:
-            return True
-        if start + r > Game.NUMCOLS:
-            for i in range(start - 1, Game.NUMCOLS - self.die - 1, -1):
-                if len(self.grid[i]) != 0 and self.grid[i][0] == self.players[0]:
-                    return False
-            return True
-        return False
 
     def is_valid_move(self, start, end, token):
         if len(self.grid[start]) > 0 and self.grid[start][0] == token:
@@ -315,37 +389,37 @@ class Game:
         return False
 
     def draw_col(self,i,col):
-        print "|",
+        print("|", end='')
         if i==-2:
             if col<10:
-                print "",
-            print str(col),
+                print(" ", end='')
+            print(str(col), end='')
         elif i==-1:
-            print "--",
+            print("--", end='')
         elif len(self.grid[col])>i:
-            print " "+self.grid[col][i],
+            print(" "+self.grid[col][i], end='')
         else:
-            print "  ",
+            print("  ", end='')
 
     def draw(self):
         os.system('clear')
-        largest = max([len(self.grid[i]) for i in range(len(self.grid)/2,len(self.grid))])
+        largest = max([len(self.grid[i]) for i in range(int(len(self.grid)/2), int(len(self.grid)))])
         for i in range(-2,largest):
-            for col in range(len(self.grid)/2,len(self.grid)):
+            for col in range(int(len(self.grid)/2),int(len(self.grid))):
                 self.draw_col(i,col)
-            print "|"
-        print
-        print
-        largest = max([len(self.grid[i]) for i in range(len(self.grid)/2)])
+            print("|")
+        print()
+        print()
+        largest = max([len(self.grid[i]) for i in range(int(len(self.grid)/2))])
         for i in range(largest-1,-3,-1):
-            for col in range(len(self.grid)/2-1,-1,-1):
+            for col in range(int(len(self.grid)/2-1),-1,-1):
                 self.draw_col(i,col)
-            print "|"
+            print("|")
         for t in self.players:
-            print "<Player %s>  Off Board : "%(t),
+            print("<Player %s>  Off Board : "%(t), end='')
             for piece in self.off_pieces[t]:
-                print t+'',
-            print "   Bar : ",
+                print(t+'', end='')
+            print("   Bar : ", end='')
             for piece in self.bar_pieces[t]:
-                print t+'',
-            print
+                print(t+'', end='')
+            print()
