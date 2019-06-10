@@ -9,7 +9,7 @@ Before DeepMind tackled playing Atari games or built AlphaGo there was TD-Gammon
 ## Training
 
 1. [Install TensorFlow](https://www.tensorflow.org/install)
-2. Clone the repo: `git clone https://github.com/ngl5000/td-gammon-revised.git && cd td-gammon`
+2. Clone the repo: `git clone https://github.com/ngl5000/td-gammon-revised.git && cd td-gammon-revised`
 3. Run training: `python main.py`
 
 ## Play
