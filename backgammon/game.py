@@ -20,6 +20,7 @@ class Game:
         """
         self.die = Game.QUAD
         self.layout = layout
+        self.ts = False 
         if grid:
             self.grid = copy.deepcopy(grid)
             self.off_pieces = copy.deepcopy(off_pieces)
@@ -38,7 +39,7 @@ class Game:
             self.num_pieces[t] = 0
 
     @staticmethod
-    def new(ts):
+    def new():
         game = Game()
         game.reset()
         return game
@@ -66,7 +67,8 @@ class Game:
         else:
             return (-random.randint(1, self.die), -random.randint(1, self.die))
 
-    def play(self, players, draw=False):
+    def play(self, players, draw=False,ts=False):
+        self.ts = ts
         player_num = random.randint(0, 1)
         while not self.is_over():
             self.next_step(players[player_num], player_num, draw=draw)
@@ -95,7 +97,7 @@ class Game:
         moves = self.get_actions(roll, player.player, nodups=False)
 
         """check for possible rolls"""
-        if ts:
+        if self.ts:
             for poss in moves:
                 print(poss)
 

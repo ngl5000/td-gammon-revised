@@ -5,7 +5,7 @@ class HumanAgent(object):
         self.player = player
         self.name = 'Human'
 
-    def get_action(self, moves, game=None,doubles=False):
+    def get_action(self, moves, game=None, doubles=False):
         if not moves:
             input("No moves for you...(hit enter)")
             return None
@@ -74,11 +74,10 @@ class HumanAgent(object):
                 return move
             else:
                 print("You can't play that move")
-                """check the moves that you entered"""
-                if FLAGS.test:
+                """check the moves that you entered
                     for mov in move:
                         print(mov)
-                
+                """
         return None
 
     def get_formatted_move(self, move):
