@@ -172,8 +172,8 @@ class Model(object):
     def get_output(self, x):
         return self.sess.run(self.V, feed_dict={ self.x: x })
 
-    def play(self, ts=False):
-        game = Game.new(ts)
+    def play(self):
+        game = Game.new()
         game.play([TDAgent(Game.TOKENS[0], self), HumanAgent(Game.TOKENS[1])], draw=True)
 
     def test(self, episodes=100, draw=False):

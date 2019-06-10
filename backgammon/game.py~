@@ -38,7 +38,7 @@ class Game:
             self.num_pieces[t] = 0
 
     @staticmethod
-    def new(ts):
+    def new():
         game = Game()
         game.reset()
         return game
@@ -95,7 +95,7 @@ class Game:
         moves = self.get_actions(roll, player.player, nodups=False)
 
         """check for possible rolls"""
-        if ts:
+        if FLAGS.test:
             for poss in moves:
                 print(poss)
 
