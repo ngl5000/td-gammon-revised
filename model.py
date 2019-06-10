@@ -174,7 +174,7 @@ class Model(object):
 
     def play(self, ts=False):
         game = Game.new()
-        game.play([TDAgent(Game.TOKENS[0], self), HumanAgent(Game.TOKENS[1])], draw=True, ts)
+        game.play([TDAgent(Game.TOKENS[0], self), HumanAgent(Game.TOKENS[1])], draw=True, ts=ts)
 
     def test(self, episodes=100, draw=False):
         players = [TDAgent(Game.TOKENS[0], self), RandomAgent(Game.TOKENS[1])]

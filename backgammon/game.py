@@ -69,6 +69,10 @@ class Game:
 
     def play(self, players, draw=False,ts=False):
         self.ts = ts
+        if ts:
+            print('what the fuck')
+        else:
+            print('seriously')
         player_num = random.randint(0, 1)
         while not self.is_over():
             self.next_step(players[player_num], player_num, draw=draw)
