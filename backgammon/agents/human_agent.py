@@ -74,10 +74,10 @@ class HumanAgent(object):
                 return move
             else:
                 print("You can't play that move")
-                """check the moves that you entered
-                for mov in move:
-                    print(mov)
-                """
+                """check the moves that you entered"""
+                if FLAGS.test:
+                    for mov in move:
+                        print(mov)
                 
         return None
 

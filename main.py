@@ -10,6 +10,7 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_boolean('test', False, 'If true, test against a random strategy.')
 flags.DEFINE_boolean('play', False, 'If true, play against a trained TD-Gammon strategy.')
+flags.DEFINE_boolean('troubleshoot', False, 'If true, print set of available moves between each turn.')
 flags.DEFINE_boolean('random_selfplay', False, 'Watch 2 random agents play')
 flags.DEFINE_boolean('restore', False, 'If true, restore a checkpoint before training.')
 

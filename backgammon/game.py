@@ -94,10 +94,10 @@ class Game:
 
         moves = self.get_actions(roll, player.player, nodups=False)
 
-        """check for possible roles
-        for poss in moves:
-            print(poss)
-        """
+        """check for possible rolls"""
+        if FLAGS.test:
+            for poss in moves:
+                print(poss)
 
         if player.name == 'Human':
             move = player.get_action(moves, self, doubles=dubs) if moves else None
